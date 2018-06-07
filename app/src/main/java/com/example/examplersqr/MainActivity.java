@@ -37,7 +37,7 @@ import java.util.Random;
  */
 public class MainActivity extends ActionBarActivity {
 
-    private SwipeRefreshLayout swiper;
+    private TargetedSwipeRefreshLayout swiper;
     private RecyclerView mRecycler;
     private StaggeredGridLayoutManager mSGLM;
     private LinearLayout qrBar;
@@ -99,7 +99,7 @@ public class MainActivity extends ActionBarActivity {
         //////////////////////////////
         //  Setup Swipe To Refresh  //
         //////////////////////////////
-        swiper = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
+        swiper = (TargetedSwipeRefreshLayout) findViewById(R.id.swipe_container);
         swiper.setSize(SwipeRefreshLayout.LARGE);
         swiper.setColorSchemeResources(
                 android.R.color.holo_blue_bright,
@@ -133,6 +133,7 @@ public class MainActivity extends ActionBarActivity {
         //////////////////////////////////////////////
         mRecycler = (RecyclerView) findViewById(R.id.rvExampleGrid);
         mRecycler.addItemDecoration(new QRBarDecoration(columnCount, qrBarHeight));
+        // mRecycler.addItemDecoration(new OverlapDecoration());
 
         mSGLM = new StaggeredGridLayoutManager(columnCount, StaggeredGridLayoutManager.VERTICAL);
 
@@ -163,13 +164,6 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
 
-                // This 'magic' came from: http://stackoverflow.com/a/25183693/2259418
-                // Needed to make sure refresh only occurs from TOP of list.
-                int topRowVerticalPosition =
-                        (recyclerView == null || recyclerView.getChildCount() == 0)
-                                ? 0 : recyclerView.getChildAt(0).getTop();
-                swiper.setEnabled(topRowVerticalPosition >= 0);
-
                 // Simple check if moved vertically.
                 // React to scrolls of a minimum amount (3, in this case)
                 if (dy > 3) {
@@ -186,8 +180,13 @@ public class MainActivity extends ActionBarActivity {
         });
 
 
-        // Finally, set the RecyclerView's Adapter
+        // Set the RecyclerView's Adapter
         mRecycler.setAdapter(mAdapter);
+
+        // Set the Recyclerview to be the target scrollable view
+        // for the TargetedSwipeRefreshAdapter.
+        swiper.setTargetScrollableView(mRecycler);
+
     }
 
     private void hideQRBar() {
@@ -209,6 +208,18 @@ public class MainActivity extends ActionBarActivity {
         myDataset.add(position, item);
         mAdapter.notifyItemInserted(position);
         mSGLM.scrollToPosition(position);
+
+        // Items added to the top row? Better invalidate the decorator.
+        // Delay to ensure that the previous layout pass has completed.
+        // NO LONGER REQUIRED:  as of R22 support libs
+//        if (position < columnCount) {
+//            new Handler().post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    mRecycler.invalidateItemDecorations();
+//                }
+//            });
+//        }
     }
 
 
